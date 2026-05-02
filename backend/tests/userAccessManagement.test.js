@@ -52,6 +52,7 @@ test('user access management security flows', async () => {
   const regularUser = {
     fullName: 'Integration User',
     email: 'integration.user@example.com',
+    phoneNumber: '+97699112233',
     password: 'User12345'
   };
 
@@ -61,6 +62,7 @@ test('user access management security flows', async () => {
   });
   assert.equal(register.status, 201);
   assert.equal(register.body.user.email, regularUser.email);
+  assert.equal(register.body.user.phoneNumber, regularUser.phoneNumber);
 
   const adminLogin = await api('/api/auth/login', {
     method: 'POST',
@@ -80,11 +82,12 @@ test('user access management security flows', async () => {
   const userLogin = await api('/api/auth/login', {
     method: 'POST',
     body: {
-      email: regularUser.email,
+      login: regularUser.phoneNumber,
       password: regularUser.password
     }
   });
   assert.equal(userLogin.status, 200);
+  assert.equal(userLogin.body.user.phoneNumber, regularUser.phoneNumber);
   const firstUserToken = userLogin.body.token;
 
   const logout = await api('/api/auth/logout', {
@@ -117,7 +120,7 @@ test('user access management security flows', async () => {
   const wrongPasswordWhileInactive = await api('/api/auth/login', {
     method: 'POST',
     body: {
-      email: regularUser.email,
+      login: regularUser.phoneNumber,
       password: 'WrongPassword123'
     }
   });
@@ -126,7 +129,7 @@ test('user access management security flows', async () => {
   const correctPasswordWhileInactive = await api('/api/auth/login', {
     method: 'POST',
     body: {
-      email: regularUser.email,
+      login: regularUser.phoneNumber,
       password: regularUser.password
     }
   });
@@ -170,7 +173,7 @@ test('user access management security flows', async () => {
   const newPasswordLogin = await api('/api/auth/login', {
     method: 'POST',
     body: {
-      email: regularUser.email,
+      login: regularUser.phoneNumber,
       password: 'NewUser123'
     }
   });

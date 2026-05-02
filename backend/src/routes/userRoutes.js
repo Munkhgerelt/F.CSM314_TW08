@@ -37,8 +37,8 @@ function buildUserFilters(query) {
   }
 
   if (query.search) {
-    clauses.push('(full_name LIKE ? OR email LIKE ?)');
-    params.push(`%${query.search}%`, `%${query.search}%`);
+    clauses.push('(full_name LIKE ? OR email LIKE ? OR phone_number LIKE ?)');
+    params.push(`%${query.search}%`, `%${query.search}%`, `%${query.search}%`);
   }
 
   return {
@@ -69,10 +69,10 @@ function buildActivityLogFilters(query) {
 
 router.patch('/me', authenticate, updateProfileValidator, validateRequest, async (req, res, next) => {
   try {
-    const { fullName, email } = req.body;
+    const { fullName, email, phoneNumber } = req.body;
     const db = await getDb();
 
-    if (!fullName && !email) {
+    if (!fullName && !email && !phoneNumber) {
       return res.status(400).json({ message: 'At least one profile field must be provided.' });
     }
 
@@ -87,18 +87,30 @@ router.patch('/me', authenticate, updateProfileValidator, validateRequest, async
       }
     }
 
+    if (phoneNumber) {
+      const existingPhone = await db.get(
+        'SELECT id FROM users WHERE phone_number = ? AND id != ?',
+        [phoneNumber, req.user.id]
+      );
+
+      if (existingPhone) {
+        return res.status(409).json({ message: 'Phone number is already used by another account.' });
+      }
+    }
+
     const nextFullName = fullName || req.user.full_name;
     const nextEmail = email || req.user.email;
+    const nextPhoneNumber = phoneNumber || req.user.phone_number;
 
     await db.run(
       `UPDATE users
-       SET full_name = ?, email = ?, updated_at = CURRENT_TIMESTAMP
+       SET full_name = ?, email = ?, phone_number = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [nextFullName, nextEmail, req.user.id]
+      [nextFullName, nextEmail, nextPhoneNumber, req.user.id]
     );
 
     const updatedUser = await db.get(
-      `SELECT id, full_name, email, role, status, created_at, updated_at
+      `SELECT id, full_name, email, phone_number, role, status, created_at, updated_at
        FROM users WHERE id = ?`,
       [req.user.id]
     );
@@ -126,7 +138,7 @@ router.get('/', authenticate, authorize('ADMIN'), listUsersValidator, validateRe
     const { whereSql, params } = buildUserFilters(req.query);
     const totalRow = await db.get(`SELECT COUNT(*) AS total FROM users ${whereSql}`, params);
     const users = await db.all(
-      `SELECT id, full_name, email, role, status, created_at, updated_at
+      `SELECT id, full_name, email, phone_number, role, status, created_at, updated_at
        FROM users
        ${whereSql}
        ORDER BY created_at DESC
@@ -184,7 +196,7 @@ router.patch('/:id/status', authenticate, authorize('ADMIN'), updateStatusValida
     );
 
     const updatedUser = await db.get(
-      `SELECT id, full_name, email, role, status, created_at, updated_at
+      `SELECT id, full_name, email, phone_number, role, status, created_at, updated_at
        FROM users WHERE id = ?`,
       [id]
     );
@@ -241,7 +253,7 @@ router.patch('/:id/role', authenticate, authorize('ADMIN'), updateRoleValidator,
     );
 
     const updatedUser = await db.get(
-      `SELECT id, full_name, email, role, status, created_at, updated_at
+      `SELECT id, full_name, email, phone_number, role, status, created_at, updated_at
        FROM users WHERE id = ?`,
       [id]
     );

@@ -14,7 +14,7 @@ Root дээр байгаа `package.json` нь зөвхөн shortcut command-у�
 ## Юу хийдэг вэ?
 
 - Шинэ хэрэглэгч бүртгэнэ
-- Имэйл, нууц үгээр login хийнэ
+- Имэйл эсвэл утасны дугаар, нууц үгээр login хийнэ
 - JWT ашиглаж хамгаалагдсан endpoint-ууд руу хандана
 - Logout хийхэд token сервер талд хүчингүй болно
 - Нууц үгийг bcrypt hash хэлбэрээр хадгална
@@ -34,7 +34,7 @@ Root дээр байгаа `package.json` нь зөвхөн shortcut command-у�
 | Password reset | Reset token random үүснэ, database-д hash хэлбэрээр хадгалагдана, хугацаатай, нэг удаа ашиглагдана |
 | Token revoke | Logout хийхэд JWT-ийн `jti` revoked token table-д орно |
 | Session invalidation | Password, role, status өөрчлөгдөхөд token version нэмэгдэж хуучин JWT ажиллахгүй болно |
-| Input validation | Имэйл, нууц үг, нэр, role, status, page, limit зэрэг оролтууд шалгагдана |
+| Input validation | Имэйл, утасны дугаар, нууц үг, нэр, role, status, page, limit зэрэг оролтууд шалгагдана |
 | Rate limiting | Login оролдлогыг хязгаарласан |
 | Audit log | Гол аюулгүй байдлын үйлдлүүд бүртгэгдэнэ |
 | Admin хамгаалалт | Системд дор хаяж нэг active admin үлдэхээр шалгана |
@@ -122,9 +122,11 @@ npm run backend:test
 
 ```text
 Admin email: admin@esport.local
+Admin phone: +97699000001
 Admin password: Admin@12345
 
 User email: user@example.com
+User phone: +97699000002
 User password: User@12345
 ```
 
@@ -156,6 +158,7 @@ Content-Type: application/json
 {
   "fullName": "New User",
   "email": "newuser@example.com",
+  "phoneNumber": "+97699001122",
   "password": "Password123"
 }
 ```
@@ -167,10 +170,12 @@ POST /api/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@esport.local",
+  "login": "admin@esport.local",
   "password": "Admin@12345"
 }
 ```
+
+`login` талбарт имэйл эсвэл утасны дугаар явуулж болно. Жишээ нь `"login": "+97699000002"`.
 
 Login амжилттай бол token ирнэ. Дараагийн protected request дээр:
 
@@ -225,7 +230,8 @@ Authorization: Bearer YOUR_TOKEN_HERE
 Content-Type: application/json
 
 {
-  "fullName": "Updated Name"
+  "fullName": "Updated Name",
+  "phoneNumber": "+97699001123"
 }
 ```
 
@@ -235,6 +241,8 @@ Content-Type: application/json
 GET /api/users?page=1&limit=20&role=USER&status=ACTIVE&search=user
 Authorization: Bearer ADMIN_TOKEN_HERE
 ```
+
+`search` нь нэр, имэйл, утасны дугаараар хайна.
 
 ### Admin: user status өөрчлөх
 

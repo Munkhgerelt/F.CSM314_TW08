@@ -1,4 +1,5 @@
 const { body, param, query } = require('express-validator');
+const normalizePhone = require('../utils/normalizePhone');
 
 const allowedRoles = ['ADMIN', 'USER'];
 const allowedStatuses = ['ACTIVE', 'INACTIVE'];
@@ -12,7 +13,12 @@ const updateProfileValidator = [
     .optional()
     .trim()
     .isEmail().withMessage('Valid email is required.')
-    .normalizeEmail()
+    .normalizeEmail(),
+  body('phoneNumber')
+    .optional({ checkFalsy: true })
+    .trim()
+    .customSanitizer(normalizePhone)
+    .matches(/^\+?[0-9]{7,15}$/).withMessage('Valid phone number is required.')
 ];
 
 const updateStatusValidator = [

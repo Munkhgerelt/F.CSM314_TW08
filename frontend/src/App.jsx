@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const defaultApiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
-const emptyLogin = { email: 'admin@esport.local', password: 'Admin@12345' };
-const emptyRegister = { fullName: '', email: '', password: '' };
-const emptyProfile = { fullName: '', email: '' };
+const emptyLogin = { login: 'admin@esport.local', password: 'Admin@12345' };
+const emptyRegister = { fullName: '', email: '', phoneNumber: '', password: '' };
+const emptyProfile = { fullName: '', email: '', phoneNumber: '' };
 const emptyUserFilters = { search: '', role: '', status: '' };
 const emptyLogFilters = { action: '', userId: '' };
 
@@ -81,7 +81,8 @@ export default function App() {
     if (user) {
       setProfileForm({
         fullName: user.fullName || '',
-        email: user.email || ''
+        email: user.email || '',
+        phoneNumber: user.phoneNumber || ''
       });
     }
   }, [user]);
@@ -283,7 +284,7 @@ export default function App() {
                 <h2>Sign in</h2>
                 <span className="tag">Login</span>
               </div>
-              <Field label="Email" type="email" value={loginForm.email} onChange={(value) => setLoginForm({ ...loginForm, email: value })} />
+              <Field label="Email or phone number" value={loginForm.login} onChange={(value) => setLoginForm({ ...loginForm, login: value })} />
               <Field label="Password" type="password" value={loginForm.password} onChange={(value) => setLoginForm({ ...loginForm, password: value })} />
               <button type="submit" className="primary">Sign in</button>
             </form>
@@ -295,6 +296,7 @@ export default function App() {
               </div>
               <Field label="Full name" value={registerForm.fullName} placeholder="New User" onChange={(value) => setRegisterForm({ ...registerForm, fullName: value })} />
               <Field label="Email" type="email" value={registerForm.email} placeholder="newuser@example.com" onChange={(value) => setRegisterForm({ ...registerForm, email: value })} />
+              <Field label="Phone number" type="tel" value={registerForm.phoneNumber} placeholder="+97699001122" onChange={(value) => setRegisterForm({ ...registerForm, phoneNumber: value })} />
               <Field label="Password" type="password" value={registerForm.password} placeholder="Password123" onChange={(value) => setRegisterForm({ ...registerForm, password: value })} />
               <button type="submit" className="primary">Register</button>
             </form>
@@ -324,12 +326,14 @@ export default function App() {
                 <dl className="profile-list">
                   <ProfileItem label="Name" value={user.fullName} />
                   <ProfileItem label="Email" value={user.email} />
+                  <ProfileItem label="Phone" value={user.phoneNumber} />
                   <ProfileItem label="Role" value={user.role} />
                   <ProfileItem label="Status" value={user.status} />
                 </dl>
                 <form className="inline-form" onSubmit={updateProfile}>
                   <Field label="Name" value={profileForm.fullName} onChange={(value) => setProfileForm({ ...profileForm, fullName: value })} />
                   <Field label="Email" type="email" value={profileForm.email} onChange={(value) => setProfileForm({ ...profileForm, email: value })} />
+                  <Field label="Phone" type="tel" value={profileForm.phoneNumber} required={false} onChange={(value) => setProfileForm({ ...profileForm, phoneNumber: value })} />
                   <button type="submit" className="primary">Save</button>
                 </form>
               </section>
@@ -346,7 +350,7 @@ export default function App() {
                   setUsersPage(1);
                   loadUsers().catch(showError);
                 }}>
-                  <input type="search" placeholder="Search by name or email" value={userFilters.search} onChange={(event) => setUserFilters({ ...userFilters, search: event.target.value })} />
+                  <input type="search" placeholder="Search by name, email, or phone" value={userFilters.search} onChange={(event) => setUserFilters({ ...userFilters, search: event.target.value })} />
                   <Select value={userFilters.role} onChange={(value) => setUserFilters({ ...userFilters, role: value })} options={['', 'ADMIN', 'USER']} emptyLabel="All roles" />
                   <Select value={userFilters.status} onChange={(value) => setUserFilters({ ...userFilters, status: value })} options={['', 'ACTIVE', 'INACTIVE']} emptyLabel="All statuses" />
                   <button type="submit">Filter</button>
@@ -358,6 +362,7 @@ export default function App() {
                         <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Phone</th>
                         <th>Role</th>
                         <th>Status</th>
                         <th></th>
@@ -365,12 +370,13 @@ export default function App() {
                     </thead>
                     <tbody>
                       {users.length === 0 ? (
-                        <tr><td colSpan="6">No users found.</td></tr>
+                        <tr><td colSpan="7">No users found.</td></tr>
                       ) : users.map((item) => (
                         <tr key={item.id}>
                           <td>{item.id}</td>
                           <td>{item.fullName}</td>
                           <td>{item.email}</td>
+                          <td>{item.phoneNumber || '-'}</td>
                           <td>
                             <Select value={item.role} onChange={(value) => updateUserRow(item.id, { role: value })} options={['ADMIN', 'USER']} />
                           </td>
@@ -465,7 +471,7 @@ export default function App() {
   );
 }
 
-function Field({ label, value, onChange, type = 'text', placeholder = '', readOnly = false }) {
+function Field({ label, value, onChange, type = 'text', placeholder = '', readOnly = false, required = true }) {
   return (
     <label>
       {label}
@@ -474,7 +480,7 @@ function Field({ label, value, onChange, type = 'text', placeholder = '', readOn
         value={value}
         placeholder={placeholder}
         readOnly={readOnly}
-        required={!readOnly}
+        required={required && !readOnly}
         onChange={(event) => onChange(event.target.value)}
       />
     </label>

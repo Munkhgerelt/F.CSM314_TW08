@@ -24,7 +24,7 @@ async function authenticate(req, res, next) {
     }
 
     const user = await db.get(
-      `SELECT id, full_name, email, role, status, token_version, created_at, updated_at
+      `SELECT id, full_name, email, phone_number, role, status, token_version, created_at, updated_at
        FROM users
        WHERE id = ?`,
       [payload.sub]

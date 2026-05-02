@@ -5,6 +5,7 @@ function sanitizeUser(user) {
     id: user.id,
     fullName: user.full_name,
     email: user.email,
+    phoneNumber: user.phone_number,
     role: user.role,
     status: user.status,
     createdAt: user.created_at,

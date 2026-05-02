@@ -15,6 +15,7 @@ const {
 } = require('../validators/authValidators');
 const sanitizeUser = require('../utils/sanitizeUser');
 const logActivity = require('../utils/logActivity');
+const normalizePhone = require('../utils/normalizePhone');
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ function hashResetToken(token) {
 
 router.post('/register', registerValidator, validateRequest, async (req, res, next) => {
   try {
-    const { fullName, email, password } = req.body;
+    const { fullName, email, phoneNumber, password } = req.body;
     const db = await getDb();
 
     const existingUser = await db.get('SELECT id FROM users WHERE email = ?', [email]);
@@ -54,15 +55,20 @@ router.post('/register', registerValidator, validateRequest, async (req, res, ne
       return res.status(409).json({ message: 'Email is already registered.' });
     }
 
+    const existingPhone = await db.get('SELECT id FROM users WHERE phone_number = ?', [phoneNumber]);
+    if (existingPhone) {
+      return res.status(409).json({ message: 'Phone number is already registered.' });
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await db.run(
-      `INSERT INTO users (full_name, email, password_hash, role, status)
-       VALUES (?, ?, ?, 'USER', 'ACTIVE')`,
-      [fullName, email, passwordHash]
+      `INSERT INTO users (full_name, email, phone_number, password_hash, role, status)
+       VALUES (?, ?, ?, ?, 'USER', 'ACTIVE')`,
+      [fullName, email, phoneNumber, passwordHash]
     );
 
     const user = await db.get(
-      `SELECT id, full_name, email, role, status, created_at, updated_at
+      `SELECT id, full_name, email, phone_number, role, status, created_at, updated_at
        FROM users WHERE id = ?`,
       [result.lastID]
     );
@@ -85,18 +91,20 @@ router.post('/register', registerValidator, validateRequest, async (req, res, ne
 
 router.post('/login', loginLimiter, loginValidator, validateRequest, async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const loginIdentifier = (req.body.login || req.body.email || '').trim();
+    const phoneNumber = normalizePhone(loginIdentifier);
+    const { password } = req.body;
     const db = await getDb();
 
     const user = await db.get(
-      `SELECT id, full_name, email, password_hash, role, status, token_version, created_at, updated_at
+      `SELECT id, full_name, email, phone_number, password_hash, role, status, token_version, created_at, updated_at
        FROM users
-       WHERE email = ?`,
-      [email]
+       WHERE LOWER(email) = LOWER(?) OR phone_number = ?`,
+      [loginIdentifier, phoneNumber]
     );
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      return res.status(401).json({ message: 'Invalid email/phone or password.' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
@@ -107,7 +115,7 @@ router.post('/login', loginLimiter, loginValidator, validateRequest, async (req,
         details: 'Invalid password entered.',
         ipAddress: req.ip
       });
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      return res.status(401).json({ message: 'Invalid email/phone or password.' });
     }
 
     if (user.status !== 'ACTIVE') {

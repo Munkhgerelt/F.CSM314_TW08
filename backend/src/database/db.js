@@ -55,6 +55,7 @@ async function migrateLegacyUserRole(database) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         full_name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
+        phone_number TEXT UNIQUE,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'USER' CHECK (role IN ('ADMIN', 'USER')),
         status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
@@ -65,10 +66,11 @@ async function migrateLegacyUserRole(database) {
     `);
 
     await database.exec(`
-      INSERT INTO users_new (id, full_name, email, password_hash, role, status, token_version, created_at, updated_at)
+      INSERT INTO users_new (id, full_name, email, phone_number, password_hash, role, status, token_version, created_at, updated_at)
       SELECT id,
              full_name,
              email,
+             phone_number,
              password_hash,
              CASE WHEN role = 'CUSTOMER' THEN 'USER' ELSE role END,
              status,
@@ -97,6 +99,7 @@ async function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       full_name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
+      phone_number TEXT UNIQUE,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'USER' CHECK (role IN ('ADMIN', 'USER')),
       status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
@@ -138,17 +141,33 @@ async function initDb() {
   `);
 
   await ensureColumn(database, 'users', 'token_version', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn(database, 'users', 'phone_number', 'TEXT');
   await migrateLegacyUserRole(database);
+  await database.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_number
+    ON users(phone_number)
+    WHERE phone_number IS NOT NULL AND phone_number != '';
+  `);
   await database.run('DELETE FROM revoked_tokens WHERE expires_at <= ?', [Math.floor(Date.now() / 1000)]);
 
   const admin = await database.get('SELECT id FROM users WHERE role = ?', ['ADMIN']);
   if (!admin) {
     const passwordHash = await bcrypt.hash('Admin@12345', 12);
     await database.run(
-      `INSERT INTO users (full_name, email, password_hash, role, status)
-       VALUES (?, ?, ?, ?, ?)`,
-      ['System Admin', 'admin@esport.local', passwordHash, 'ADMIN', 'ACTIVE']
+      `INSERT INTO users (full_name, email, phone_number, password_hash, role, status)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['System Admin', 'admin@esport.local', '+97699000001', passwordHash, 'ADMIN', 'ACTIVE']
     );
+  } else {
+    const adminPhoneOwner = await database.get('SELECT id FROM users WHERE phone_number = ?', ['+97699000001']);
+    if (!adminPhoneOwner || adminPhoneOwner.id === admin.id) {
+      await database.run(
+        `UPDATE users
+         SET phone_number = COALESCE(NULLIF(phone_number, ''), ?)
+         WHERE id = ?`,
+        ['+97699000001', admin.id]
+      );
+    }
   }
 
   return database;

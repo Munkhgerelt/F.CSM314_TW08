@@ -7,13 +7,14 @@ async function seed() {
 
   const demoUser = await db.get('SELECT id FROM users WHERE email = ?', ['user@example.com']);
   const passwordHash = await bcrypt.hash('User@12345', 12);
+  const demoPhoneNumber = '+97699000002';
 
   if (demoUser) {
     await db.run(
       `UPDATE users
-       SET full_name = ?, password_hash = ?, role = ?, status = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP
+       SET full_name = ?, phone_number = ?, password_hash = ?, role = ?, status = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      ['Demo User', passwordHash, 'USER', 'ACTIVE', demoUser.id]
+      ['Demo User', demoPhoneNumber, passwordHash, 'USER', 'ACTIVE', demoUser.id]
     );
   } else {
     const legacyDemoUser = await db.get('SELECT id FROM users WHERE email = ?', ['customer@example.com']);
@@ -21,15 +22,15 @@ async function seed() {
     if (legacyDemoUser) {
       await db.run(
         `UPDATE users
-         SET full_name = ?, email = ?, password_hash = ?, role = ?, status = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP
+         SET full_name = ?, email = ?, phone_number = ?, password_hash = ?, role = ?, status = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        ['Demo User', 'user@example.com', passwordHash, 'USER', 'ACTIVE', legacyDemoUser.id]
+        ['Demo User', 'user@example.com', demoPhoneNumber, passwordHash, 'USER', 'ACTIVE', legacyDemoUser.id]
       );
     } else {
       await db.run(
-        `INSERT INTO users (full_name, email, password_hash, role, status)
-         VALUES (?, ?, ?, ?, ?)`,
-        ['Demo User', 'user@example.com', passwordHash, 'USER', 'ACTIVE']
+        `INSERT INTO users (full_name, email, phone_number, password_hash, role, status)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        ['Demo User', 'user@example.com', demoPhoneNumber, passwordHash, 'USER', 'ACTIVE']
       );
     }
   }

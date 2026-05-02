@@ -1,4 +1,13 @@
 const { body } = require('express-validator');
+const normalizePhone = require('../utils/normalizePhone');
+
+function isValidPhone(value) {
+  return /^\+?[0-9]{7,15}$/.test(normalizePhone(value));
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+}
 
 function passwordValidator(field = 'password') {
   return body(field)
@@ -17,14 +26,32 @@ const registerValidator = [
     .trim()
     .isEmail().withMessage('Valid email is required.')
     .normalizeEmail(),
+  body('phoneNumber')
+    .trim()
+    .customSanitizer(normalizePhone)
+    .matches(/^\+?[0-9]{7,15}$/).withMessage('Valid phone number is required.'),
   passwordValidator()
 ];
 
 const loginValidator = [
+  body('login')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 120 }).withMessage('Email or phone number must be between 1 and 120 characters.')
+    .custom((value) => {
+      if (isValidEmail(value) || isValidPhone(value)) return true;
+      throw new Error('Valid email or phone number is required.');
+    }),
   body('email')
+    .optional()
     .trim()
     .isEmail().withMessage('Valid email is required.')
     .normalizeEmail(),
+  body()
+    .custom((value) => {
+      if (value.login || value.email) return true;
+      throw new Error('Email or phone number is required.');
+    }),
   body('password')
     .notEmpty().withMessage('Password is required.')
 ];
