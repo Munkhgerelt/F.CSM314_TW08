@@ -1,36 +1,15 @@
 {
-  "name": "user-access-management-module",
+  "name": "internet-cafe-management-system",
   "version": "1.0.0",
-  "description": "User and Access Management module for an Internet Cafe Management System",
-  "main": "src/server.js",
+  "private": true,
+  "description": "Internet cafe management system with separated backend and frontend folders",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "seed": "node src/database/seed.js",
-    "test": "node --test tests/*.test.js"
-  },
-  "keywords": [
-    "internet-cafe",
-    "auth",
-    "rbac",
-    "jwt",
-    "sqlite"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "express-rate-limit": "^7.5.0",
-    "express-validator": "^7.2.1",
-    "helmet": "^8.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^6.0.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:start": "npm --prefix backend start",
+    "backend:seed": "npm --prefix backend run seed",
+    "backend:test": "npm --prefix backend test",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:start": "npm --prefix frontend start",
+    "frontend:build": "npm --prefix frontend run build"
   }
 }

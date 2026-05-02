@@ -1,38 +1,47 @@
 # Хэрэглэгч ба хандалтын удирдлагын модуль
 
-Энэ модуль нь интернет кафены удирдлагын системд зориулсан хэрэглэгчийн бүртгэл, нэвтрэлт, эрхийн хяналт, админы хэрэглэгч удирдлага болон үйлдлийн бүртгэлийг хариуцна. Гол санаа нь энгийн: хэрэглэгч системд аюулгүй нэвтэрч, өөрийн мэдээллээ харна; харин админ хэрэглэгчдийн төлөв, эрх, үйлдлийн бүртгэлийг хянах боломжтой байна.
+Энэ төсөл нь интернет кафены удирдлагын системийн хэрэглэгч, нэвтрэлт, эрхийн хяналтын хэсэг. Backend нь API ажиллуулна, frontend нь тэр API-тай холбогдож хэрэглэгч болон админ үйлдлүүдийг дэлгэцээр хийх боломж өгнө.
+
+## Folder бүтэц
+
+```text
+backend/   Express + SQLite API
+frontend/  React + Vite frontend
+```
+
+Root дээр байгаа `package.json` нь зөвхөн shortcut command-уудтай.
 
 ## Юу хийдэг вэ?
 
 - Шинэ хэрэглэгч бүртгэнэ
-- Имэйл, нууц үгээр нэвтрүүлнэ
-- JWT ашиглаж хамгаалагдсан endpoint-ууд руу хандуулна
-- Гарах үед JWT-г сервер талд хүчингүй болгоно
-- Нууц үгийг bcrypt ашиглан hash хэлбэрээр хадгална
+- Имэйл, нууц үгээр login хийнэ
+- JWT ашиглаж хамгаалагдсан endpoint-ууд руу хандана
+- Logout хийхэд token сервер талд хүчингүй болно
+- Нууц үгийг bcrypt hash хэлбэрээр хадгална
 - Нууц үг сэргээх token үүсгэнэ
-- Нэвтэрсэн хэрэглэгч өөрийн мэдээллээ харж, нэр эсвэл имэйлээ засна
+- Хэрэглэгч өөрийн profile-оо харж, засна
 - Админ хэрэглэгчдийн жагсаалтыг шүүлт, pagination-тэй харна
-- Админ хэрэглэгчийг идэвхтэй/идэвхгүй болгоно
-- Админ хэрэглэгчийн role өөрчилнө
-- Аюулгүй байдлын холбоотой үйлдлүүдийг activity log-д хадгална
+- Админ хэрэглэгчийн status болон role өөрчилнө
+- Register, login, failed login, logout, password reset, role/status change зэрэг үйлдлийг activity log-д хадгална
 
-## Аюулгүй байдлын шийдлүүд
+## Аюулгүй байдлын хэсэг
 
-| Шийдэл | Яаж хэрэгжүүлсэн |
+| Шийдэл | Хэрэгжүүлэлт |
 |---|---|
-| Нэвтрэлт | Амжилттай login хийсний дараа JWT үүсгэнэ |
-| Эрхийн хяналт | Admin endpoint-ууд role шалгалтаар хамгаалагдсан |
-| Нууц үг хамгаалалт | Нууц үгийг plain text биш bcrypt hash хэлбэрээр хадгална |
-| Нууц үг сэргээх | Reset token санамсаргүй үүснэ, database-д hash хэлбэрээр хадгалагдана, хугацаатай, нэг удаа ашиглагдана |
-| Token хүчингүй болгох | Logout хийхэд JWT-ийн `jti` revoked token хүснэгтэд хадгалагдана |
-| Session invalidation | Нууц үг, role, status өөрчлөгдөхөд token version нэмэгдэж хуучин JWT ажиллахгүй болно |
-| Input validation | Имэйл, нууц үг, нэр, role, status, page, limit зэрэг оролтуудыг шалгана |
-| Rate limiting | Login оролдлогыг хязгаарлаж brute-force халдлагаас хамгаална |
-| Мэдээлэл задруулахгүй байх | Идэвхгүй хэрэглэгч эсэхийг хэлэхээс өмнө эхлээд нууц үгийг шалгана |
-| Activity log | Register, login, failed login, logout, profile update, password reset, role/status change зэрэг үйлдлүүдийг бүртгэнэ |
-| Admin хамгаалалт | Системд дор хаяж нэг идэвхтэй admin үлдэхээр шалгалт хийсэн |
+| Authentication | Login амжилттай бол JWT үүсгэнэ |
+| Authorization | Admin endpoint-ууд role шалгалттай |
+| Password protection | Нууц үг plain text биш bcrypt hash-аар хадгалагдана |
+| Password reset | Reset token random үүснэ, database-д hash хэлбэрээр хадгалагдана, хугацаатай, нэг удаа ашиглагдана |
+| Token revoke | Logout хийхэд JWT-ийн `jti` revoked token table-д орно |
+| Session invalidation | Password, role, status өөрчлөгдөхөд token version нэмэгдэж хуучин JWT ажиллахгүй болно |
+| Input validation | Имэйл, нууц үг, нэр, role, status, page, limit зэрэг оролтууд шалгагдана |
+| Rate limiting | Login оролдлогыг хязгаарласан |
+| Audit log | Гол аюулгүй байдлын үйлдлүүд бүртгэгдэнэ |
+| Admin хамгаалалт | Системд дор хаяж нэг active admin үлдэхээр шалгана |
 
 ## Ашигласан технологи
+
+Backend:
 
 - Node.js
 - Express.js
@@ -43,42 +52,70 @@
 - express-rate-limit
 - express-validator
 
+Frontend:
+
+- React
+- Vite
+- HTML/CSS
+- JavaScript
+
 ## Ажиллуулах
 
-Эхлээд package-уудаа суулгана.
+Backend package-уудыг суулгах:
 
 ```bash
+cd backend
 npm install
 ```
 
-Дараа нь `.env.example`-оос `.env` файл үүсгээд шаардлагатай утгуудыг тохируулна.
+`.env` файл үүсгэх:
 
 ```bash
 cp .env.example .env
 ```
 
-Demo хэрэглэгч, админыг үүсгэх:
+Demo account-ууд үүсгэх:
 
 ```bash
 npm run seed
 ```
 
-Сервер асаах:
+Backend асаах:
 
 ```bash
 npm run dev
 ```
 
-Сервер default-оор энд ажиллана.
+Backend default-оор:
 
 ```text
 http://localhost:5000
 ```
 
-Test ажиллуулах бол:
+Frontend асаах:
 
 ```bash
-npm test
+cd ../frontend
+npm run dev
+```
+
+Frontend default-оор:
+
+```text
+http://localhost:3000
+```
+
+Root folder-оос ажиллуулах shortcut:
+
+```bash
+npm run backend:dev
+npm run frontend:dev
+```
+
+Test:
+
+```bash
+npm run backend:test
 ```
 
 ## Demo account-ууд
@@ -87,9 +124,20 @@ npm test
 Admin email: admin@esport.local
 Admin password: Admin@12345
 
-Customer email: customer@example.com
-Customer password: Customer@12345
+User email: user@example.com
+User password: User@12345
 ```
+
+## Frontend дээр хийх боломжтой зүйлс
+
+- Login / logout
+- User бүртгэх
+- Өөрийн profile харах, засах
+- Password reset token үүсгэх, password солих
+- Admin эрхээр users харах, шүүх
+- User status өөрчлөх
+- User role өөрчлөх
+- Activity log харах
 
 ## API endpoint-ууд
 
@@ -106,13 +154,13 @@ POST /api/auth/register
 Content-Type: application/json
 
 {
-  "fullName": "New Customer",
-  "email": "newcustomer@example.com",
+  "fullName": "New User",
+  "email": "newuser@example.com",
   "password": "Password123"
 }
 ```
 
-### Нэвтрэх
+### Login
 
 ```http
 POST /api/auth/login
@@ -124,7 +172,7 @@ Content-Type: application/json
 }
 ```
 
-Login амжилттай бол token буцаана. Дараагийн хамгаалагдсан request дээр ингэж ашиглана.
+Login амжилттай бол token ирнэ. Дараагийн protected request дээр:
 
 ```http
 Authorization: Bearer YOUR_TOKEN_HERE
@@ -137,27 +185,25 @@ GET /api/auth/me
 Authorization: Bearer YOUR_TOKEN_HERE
 ```
 
-### Гарах
+### Logout
 
 ```http
 POST /api/auth/logout
 Authorization: Bearer YOUR_TOKEN_HERE
 ```
 
-Logout хийсний дараа тухайн token сервер талд хүчингүй болно.
-
-### Нууц үг сэргээх хүсэлт
+### Нууц үг сэргээх token авах
 
 ```http
 POST /api/auth/forgot-password
 Content-Type: application/json
 
 {
-  "email": "newcustomer@example.com"
+  "email": "user@example.com"
 }
 ```
 
-Local/demo орчинд response дотор `resetToken` ирнэ. Production дээр бол энэ token-ийг хэрэглэгч рүү email эсвэл өөр notification сувгаар илгээх ёстой.
+Local/demo үед response дотор `resetToken` ирнэ. Production дээр үүнийг email эсвэл notification service-ээр явуулах ёстой.
 
 ### Нууц үг шинэчлэх
 
@@ -171,7 +217,7 @@ Content-Type: application/json
 }
 ```
 
-### Өөрийн profile засах
+### Profile засах
 
 ```http
 PATCH /api/users/me
@@ -183,14 +229,14 @@ Content-Type: application/json
 }
 ```
 
-### Admin: хэрэглэгчдийн жагсаалт харах
+### Admin: users харах
 
 ```http
-GET /api/users?page=1&limit=20&role=CUSTOMER&status=ACTIVE&search=customer
+GET /api/users?page=1&limit=20&role=USER&status=ACTIVE&search=user
 Authorization: Bearer ADMIN_TOKEN_HERE
 ```
 
-### Admin: хэрэглэгч идэвхтэй/идэвхгүй болгох
+### Admin: user status өөрчлөх
 
 ```http
 PATCH /api/users/2/status
@@ -202,7 +248,7 @@ Content-Type: application/json
 }
 ```
 
-### Admin: хэрэглэгчийн role өөрчлөх
+### Admin: user role өөрчлөх
 
 ```http
 PATCH /api/users/2/role
@@ -223,26 +269,21 @@ Authorization: Bearer ADMIN_TOKEN_HERE
 
 ## Demo хийх дараалал
 
-1. Серверээ асаана.
-2. Шинэ customer бүртгэнэ.
-3. Customer эрхээр login хийнэ.
-4. Өөрийн profile-оо харна.
-5. Profile мэдээллээ засна.
-6. Admin эрхээр login хийнэ.
-7. Хэрэглэгчдийн жагсаалтыг харна.
-8. Customer account-ыг идэвхгүй болгоно.
-9. Идэвхгүй болсон account-аар login хийж үзнэ.
-10. Account-ыг буцааж идэвхжүүлнэ.
-11. Нууц үг сэргээх flow-г туршина.
-12. Customer-ийн role-г өөрчилж үзнэ.
-13. Activity log-оос хийсэн үйлдлүүдээ шалгана.
+1. Backend асаана.
+2. Frontend асаана.
+3. Admin account-аар login хийнэ.
+4. Users хэсгээс хэрэглэгчдийн жагсаалтыг харна.
+5. User account үүсгэнэ эсвэл demo user-аар login хийж үзнэ.
+6. Profile мэдээлэл засна.
+7. Admin эрхээр user-ийн status эсвэл role өөрчилнө.
+8. Password reset flow туршина.
+9. Activity log дээр хийсэн үйлдлүүдээ шалгана.
 
 ## GitHub дээр оруулах
 
 ```bash
-git init
 git add .
-git commit -m "Add user access management module"
+git commit -m "Add user access management module with frontend"
 git branch -M main
 git remote add origin YOUR_REPOSITORY_URL
 git push -u origin main

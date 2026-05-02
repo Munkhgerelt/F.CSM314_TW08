@@ -34,6 +34,61 @@ async function ensureColumn(database, tableName, columnName, definition) {
   }
 }
 
+async function migrateLegacyUserRole(database) {
+  const usersTable = await database.get(
+    `SELECT sql
+     FROM sqlite_master
+     WHERE type = 'table' AND name = 'users'`
+  );
+
+  if (!usersTable || !usersTable.sql.includes("'CUSTOMER'")) {
+    await database.run("UPDATE users SET role = 'USER' WHERE role = 'CUSTOMER'");
+    return;
+  }
+
+  await database.exec('PRAGMA foreign_keys = OFF;');
+  await database.exec('BEGIN;');
+
+  try {
+    await database.exec(`
+      CREATE TABLE users_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'USER' CHECK (role IN ('ADMIN', 'USER')),
+        status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
+        token_version INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await database.exec(`
+      INSERT INTO users_new (id, full_name, email, password_hash, role, status, token_version, created_at, updated_at)
+      SELECT id,
+             full_name,
+             email,
+             password_hash,
+             CASE WHEN role = 'CUSTOMER' THEN 'USER' ELSE role END,
+             status,
+             token_version,
+             created_at,
+             updated_at
+      FROM users;
+    `);
+
+    await database.exec('DROP TABLE users;');
+    await database.exec('ALTER TABLE users_new RENAME TO users;');
+    await database.exec('COMMIT;');
+  } catch (error) {
+    await database.exec('ROLLBACK;');
+    throw error;
+  } finally {
+    await database.exec('PRAGMA foreign_keys = ON;');
+  }
+}
+
 async function initDb() {
   const database = await getDb();
 
@@ -43,7 +98,7 @@ async function initDb() {
       full_name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'CUSTOMER' CHECK (role IN ('ADMIN', 'CUSTOMER')),
+      role TEXT NOT NULL DEFAULT 'USER' CHECK (role IN ('ADMIN', 'USER')),
       status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
       token_version INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -83,6 +138,7 @@ async function initDb() {
   `);
 
   await ensureColumn(database, 'users', 'token_version', 'INTEGER NOT NULL DEFAULT 0');
+  await migrateLegacyUserRole(database);
   await database.run('DELETE FROM revoked_tokens WHERE expires_at <= ?', [Math.floor(Date.now() / 1000)]);
 
   const admin = await database.get('SELECT id FROM users WHERE role = ?', ['ADMIN']);

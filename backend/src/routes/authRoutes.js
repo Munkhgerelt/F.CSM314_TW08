@@ -21,7 +21,7 @@ const router = express.Router();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
-  skip: () => config.nodeEnv === 'test',
+  skip: () => config.nodeEnv !== 'production',
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many login attempts. Please try again later.' }
@@ -57,7 +57,7 @@ router.post('/register', registerValidator, validateRequest, async (req, res, ne
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await db.run(
       `INSERT INTO users (full_name, email, password_hash, role, status)
-       VALUES (?, ?, ?, 'CUSTOMER', 'ACTIVE')`,
+       VALUES (?, ?, ?, 'USER', 'ACTIVE')`,
       [fullName, email, passwordHash]
     );
 
@@ -70,7 +70,7 @@ router.post('/register', registerValidator, validateRequest, async (req, res, ne
     await logActivity({
       userId: user.id,
       action: 'REGISTER',
-      details: 'New customer account registered.',
+      details: 'New user account registered.',
       ipAddress: req.ip
     });
 

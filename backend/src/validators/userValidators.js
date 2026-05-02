@@ -1,6 +1,6 @@
 const { body, param, query } = require('express-validator');
 
-const allowedRoles = ['ADMIN', 'CUSTOMER'];
+const allowedRoles = ['ADMIN', 'USER'];
 const allowedStatuses = ['ACTIVE', 'INACTIVE'];
 
 const updateProfileValidator = [
@@ -26,7 +26,7 @@ const updateRoleValidator = [
   param('id')
     .isInt({ min: 1 }).withMessage('User id must be a valid number.'),
   body('role')
-    .isIn(allowedRoles).withMessage('Role must be ADMIN or CUSTOMER.')
+    .isIn(allowedRoles).withMessage('Role must be ADMIN or USER.')
 ];
 
 const listUsersValidator = [
@@ -38,7 +38,7 @@ const listUsersValidator = [
     .isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100.'),
   query('role')
     .optional()
-    .isIn(allowedRoles).withMessage('Role must be ADMIN or CUSTOMER.'),
+    .isIn(allowedRoles).withMessage('Role must be ADMIN or USER.'),
   query('status')
     .optional()
     .isIn(allowedStatuses).withMessage('Status must be ACTIVE or INACTIVE.'),
